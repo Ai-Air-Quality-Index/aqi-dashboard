@@ -116,7 +116,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 <body>
 <div class="page">
 
-  <!-- Header -->
   <div class="header">
     <h1>🌬️ AI-Based IoT Air Quality Monitor</h1>
     <p>Anantharajan Vel Murugan &nbsp;|&nbsp; ID: 294FAVZE &nbsp;|&nbsp; University of Hertfordshire</p>
@@ -128,10 +127,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     </div>
   </div>
 
-  <!-- Anomaly banner -->
   <div class="anomaly" id="anomalyBanner">⚠️ Anomaly detected — sudden AQI spike!</div>
 
-  <!-- AQI Hero -->
   <div class="aqi-hero">
     <div class="aqi-circle" id="aqiCircle">
       <div class="aqi-number" id="aqiNumber">--</div>
@@ -141,7 +138,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     <div class="advisory" id="advisory">Connecting to sensor...</div>
   </div>
 
-  <!-- Sensor cards -->
   <div class="grid">
     <div class="card">
       <div class="card-icon">🌡️</div>
@@ -181,7 +177,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     </div>
   </div>
 
-  <!-- AI Prediction -->
   <div class="predict-card">
     <div class="predict-icon">🤖</div>
     <div class="predict-info">
@@ -191,7 +186,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     </div>
   </div>
 
-  <!-- AQI Trend Chart -->
   <div class="chart-card">
     <div class="chart-title">📈 AQI Trend — Last 50 readings</div>
     <div class="chart-wrap">
@@ -199,7 +193,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     </div>
   </div>
 
-  <!-- Actions -->
   <div class="actions">
     <button class="btn primary" onclick="downloadCSV()">⬇️ Download CSV (ML Training)</button>
     <button class="btn" onclick="refreshNow()">🔄 Refresh Now</button>
@@ -216,7 +209,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 // ══════════════════════════════════════════════════════════
 //  CONFIG — update this with your Render.com URL
 // ══════════════════════════════════════════════════════════
-const BACKEND = "https://aqi-monitor-backend.onrender.com";; // <-- CHANGE THIS
+const BACKEND = "https://aqi-monitor-backend.onrender.com"; // <-- FIXED: Removed double semicolon
 const REFRESH_MS = 10000; // 10 seconds
 
 // ══════════════════════════════════════════════════════════
@@ -348,7 +341,7 @@ function updateUI(latest, history) {
   document.getElementById('statusDot').classList.add('live');
   document.getElementById('statusText').textContent = 'Live';
   document.getElementById('lastUpdate').textContent =
-    'Updated: ' + new Date(latest.timestamp).toLocaleTimeString();
+    'Updated: ' + new Date(latest.timestamp * 1000).toLocaleTimeString(); // FIXED: Convert Unix timestamp properly
 
   // Anomaly check
   const isAnomaly = checkAnomaly(aqi);
@@ -369,7 +362,7 @@ function updateUI(latest, history) {
   // Chart update
   const last50 = history.slice(-50);
   chart.data.labels = last50.map(r =>
-    new Date(r.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+    new Date(r.timestamp * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) // FIXED: Convert Unix timestamp properly
   );
   chart.data.datasets[0].data = last50.map(r => r.aqi);
   // Prediction trend line (last 12 points extended)
@@ -397,7 +390,10 @@ async function fetchData() {
       showNoData();
       return;
     }
-    updateUI(latest.data, history.readings);
+    
+    // FIXED: Passed 'latest' directly instead of 'latest.data'
+    updateUI(latest, history.readings); 
+    
   } catch (err) {
     console.error('Fetch error:', err);
     document.getElementById('statusDot').classList.remove('live');
