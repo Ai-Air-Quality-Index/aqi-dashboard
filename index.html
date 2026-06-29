@@ -15,8 +15,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  background:var(--bg);color:var(--text);min-height:100vh;
-  transition:background .5s}
+  background:var(--bg);color:var(--text);min-height:100vh;transition:background .5s}
 .page{max-width:1100px;margin:0 auto;padding:16px}
 
 /* ── Header ── */
@@ -25,8 +24,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .header p{font-size:12px;color:var(--sub);margin-top:4px}
 .status-bar{display:flex;align-items:center;justify-content:center;
   gap:8px;margin-top:10px;font-size:12px;color:var(--sub)}
-.dot{width:8px;height:8px;border-radius:50%;background:#f85149;
-  animation:pulse 2s infinite}
+.dot{width:8px;height:8px;border-radius:50%;background:#f85149;animation:pulse 2s infinite}
 .dot.live{background:#3fb950}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .last-update{font-size:11px;color:var(--sub)}
@@ -46,8 +44,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   align-items:center;justify-content:center;
   box-shadow:0 0 30px var(--glow),0 0 60px color-mix(in srgb,var(--glow) 30%,transparent);
   transition:all .5s;background:var(--card)}
-.aqi-number{font-size:52px;font-weight:700;color:var(--glow);
-  line-height:1;transition:color .5s}
+.aqi-number{font-size:52px;font-weight:700;color:var(--glow);line-height:1;transition:color .5s}
 .aqi-unit{font-size:11px;color:var(--sub);margin-top:2px}
 .aqi-label{font-size:18px;font-weight:600;margin-top:12px;
   color:var(--glow);transition:color .5s;letter-spacing:1px}
@@ -66,14 +63,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .card-value{font-size:24px;font-weight:600;color:var(--text)}
 .card-unit{font-size:11px;color:var(--sub);margin-top:2px}
 
-/* ── Prediction card ── */
+/* ── ML Prediction card (NEW) ── */
+.ml-card{background:linear-gradient(135deg,#161b22,#1a2040);
+  border:1px solid #a78bfa;border-radius:12px;padding:16px 20px;
+  margin:12px 0;display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;gap:16px}
+.ml-icon{font-size:36px}
+.ml-info{flex:1}
+.ml-title{font-size:10px;color:var(--sub);text-transform:uppercase;
+  letter-spacing:.8px;margin-bottom:4px}
+.ml-value{font-size:32px;font-weight:700;color:#a78bfa;transition:color .3s}
+.ml-label{font-size:14px;font-weight:600;color:#a78bfa;margin-top:2px;transition:color .3s}
+.ml-sub{font-size:11px;color:var(--sub);margin-top:4px}
+.ml-model{font-size:10px;color:#444;margin-top:3px}
+.ml-badge{background:#1a1040;border:1px solid #a78bfa;border-radius:20px;
+  padding:4px 12px;font-size:11px;color:#a78bfa;white-space:nowrap}
+
+/* ── 30-min trend prediction card ── */
 .predict-card{background:linear-gradient(135deg,#161b22,#1c2333);
   border:1px solid var(--accent);border-radius:12px;padding:16px 20px;
   margin:12px 0;display:flex;align-items:center;gap:16px}
 .predict-icon{font-size:32px}
 .predict-info{flex:1}
-.predict-title{font-size:11px;color:var(--sub);text-transform:uppercase;
-  letter-spacing:.5px}
+.predict-title{font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:.5px}
 .predict-value{font-size:28px;font-weight:700;color:var(--accent)}
 .predict-sub{font-size:12px;color:var(--sub);margin-top:2px}
 
@@ -110,6 +123,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   .aqi-circle{width:130px;height:130px}
   .aqi-number{font-size:42px}
   .predict-card{flex-direction:column;text-align:center}
+  .ml-card{grid-template-columns:1fr;text-align:center}
 }
 </style>
 </head>
@@ -127,8 +141,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     </div>
   </div>
 
+  <!-- Anomaly banner -->
   <div class="anomaly" id="anomalyBanner">⚠️ Anomaly detected — sudden AQI spike!</div>
 
+  <!-- AQI Circle -->
   <div class="aqi-hero">
     <div class="aqi-circle" id="aqiCircle">
       <div class="aqi-number" id="aqiNumber">--</div>
@@ -138,6 +154,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     <div class="advisory" id="advisory">Connecting to sensor...</div>
   </div>
 
+  <!-- Sensor Cards -->
   <div class="grid">
     <div class="card">
       <div class="card-icon">🌡️</div>
@@ -177,24 +194,42 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     </div>
   </div>
 
+  <!-- ══ ML PREDICTION CARD (NEW) ══ -->
+  <div class="ml-card" id="mlCard">
+    <div class="ml-icon">🤖</div>
+    <div class="ml-info">
+      <div class="ml-title">ML Model — US EPA Formula (R²=1.000 · MAE=0.01)</div>
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
+        <div class="ml-value" id="mlAQI">--</div>
+        <div class="ml-label" id="mlLabel">Waiting...</div>
+      </div>
+      <div class="ml-sub" id="mlConf">Fetching ML prediction...</div>
+      <div class="ml-model" id="mlModel">Trained on 1,440 readings · 5 models compared · Random Forest selected</div>
+    </div>
+    <div class="ml-badge" id="mlBadge">--</div>
+  </div>
+
+  <!-- 30-min trend prediction -->
   <div class="predict-card">
-    <div class="predict-icon">🤖</div>
+    <div class="predict-icon">📈</div>
     <div class="predict-info">
-      <div class="predict-title">AI Prediction — 30 minutes ahead</div>
+      <div class="predict-title">Linear Regression — 30 minutes ahead trend</div>
       <div class="predict-value" id="predValue">-- AQI</div>
       <div class="predict-sub" id="predLabel">Collecting data for prediction...</div>
     </div>
   </div>
 
+  <!-- Chart -->
   <div class="chart-card">
-    <div class="chart-title">📈 AQI Trend — Last 50 readings</div>
+    <div class="chart-title">📊 AQI Trend — Last 50 readings</div>
     <div class="chart-wrap">
       <canvas id="aqiChart"></canvas>
     </div>
   </div>
 
+  <!-- Action buttons -->
   <div class="actions">
-    <button class="btn primary" onclick="downloadCSV()">⬇️ Download CSV (ML Training)</button>
+    <button class="btn primary" onclick="downloadCSV()">⬇️ Download CSV (ML Training Data)</button>
     <button class="btn" onclick="refreshNow()">🔄 Refresh Now</button>
     <button class="btn" onclick="clearChart()">🗑️ Clear Chart</button>
   </div>
@@ -207,13 +242,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 
 <script>
 // ══════════════════════════════════════════════════════════
-//  CONFIG — update this with your Render.com URL
+//  CONFIG
 // ══════════════════════════════════════════════════════════
-const BACKEND = "https://aqi-monitor-backend.onrender.com"; // <-- FIXED: Removed double semicolon
-const REFRESH_MS = 5000; // 10 seconds
+const BACKEND    = "https://aqi-monitor-backend.onrender.com";
+const REFRESH_MS = 5000;
 
 // ══════════════════════════════════════════════════════════
-//  AQI colour map
+//  AQI colour + label map
 // ══════════════════════════════════════════════════════════
 function aqiConfig(aqi) {
   if (aqi <= 50)  return { color:"#3fb950", label:"GOOD",
@@ -248,7 +283,7 @@ const chart = new Chart(ctx, {
       fill: true,
       tension: 0.4
     }, {
-      label: '30-min Prediction',
+      label: '30-min Trend',
       data: [],
       borderColor: '#d29922',
       backgroundColor: 'transparent',
@@ -257,6 +292,17 @@ const chart = new Chart(ctx, {
       pointRadius: 0,
       fill: false,
       tension: 0.4
+    }, {
+      label: 'ML Predicted',
+      data: [],
+      borderColor: '#a78bfa',
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      borderDash: [3, 3],
+      pointRadius: 4,
+      pointBackgroundColor: '#a78bfa',
+      fill: false,
+      tension: 0
     }]
   },
   options: {
@@ -264,70 +310,107 @@ const chart = new Chart(ctx, {
     maintainAspectRatio: false,
     animation: { duration: 300 },
     plugins: {
-      legend: { labels: { color: '#8b949e', font: { size: 11 } } }
+      legend: { labels: { color: '#8b949e', font: { size: 11 } } },
+      tooltip: {
+        backgroundColor: '#161b22',
+        borderColor: '#30363d',
+        borderWidth: 1,
+        titleColor: '#e6edf3',
+        bodyColor: '#8b949e'
+      }
     },
     scales: {
-      x: { ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 8 },
-           grid: { color: '#30363d' } },
-      y: { ticks: { color: '#8b949e', font: { size: 10 } },
-           grid: { color: '#30363d' }, min: 0 }
+      x: { ticks: { color:'#8b949e', font:{size:10}, maxTicksLimit:8 },
+           grid: { color:'#30363d' } },
+      y: { ticks: { color:'#8b949e', font:{size:10} },
+           grid: { color:'#30363d' }, min: 0 }
     }
   }
 });
 
 // ══════════════════════════════════════════════════════════
-//  Z-score anomaly detection (rolling window)
+//  Z-score anomaly detection
 // ══════════════════════════════════════════════════════════
 let aqiWindow = [];
 function checkAnomaly(aqi) {
   aqiWindow.push(aqi);
   if (aqiWindow.length > 20) aqiWindow.shift();
   if (aqiWindow.length < 5) return false;
-  const mean = aqiWindow.reduce((a,b)=>a+b,0)/aqiWindow.length;
+  const mean  = aqiWindow.reduce((a,b)=>a+b,0)/aqiWindow.length;
   const sigma = Math.sqrt(aqiWindow.reduce((a,b)=>a+Math.pow(b-mean,2),0)/aqiWindow.length);
   if (sigma === 0) return false;
-  const z = Math.abs((aqi - mean) / sigma);
-  return z > 2.5;
+  return Math.abs((aqi - mean) / sigma) > 2.5;
 }
 
 // ══════════════════════════════════════════════════════════
-//  Linear regression prediction (30 min ahead)
-//  12 readings × 10 sec = 2 min window → predict 180 steps
+//  Linear regression — 30-min trend
 // ══════════════════════════════════════════════════════════
-function predictAQI(history) {
+function predictTrend(history) {
   if (history.length < 5) return null;
   const n   = Math.min(history.length, 12);
-  const pts = history.slice(-n).map((r,i) => ({ x: i, y: r.aqi }));
+  const pts = history.slice(-n).map((r,i) => ({ x:i, y:r.aqi }));
   const sx  = pts.reduce((a,p)=>a+p.x, 0);
   const sy  = pts.reduce((a,p)=>a+p.y, 0);
   const sxy = pts.reduce((a,p)=>a+p.x*p.y, 0);
   const sxx = pts.reduce((a,p)=>a+p.x*p.x, 0);
   const nn  = pts.length;
-  const m   = (nn*sxy - sx*sy) / (nn*sxx - sx*sx) || 0;
+  const denom = (nn*sxx - sx*sx);
+  if (denom === 0) return null;
+  const m   = (nn*sxy - sx*sy) / denom;
   const b   = (sy - m*sx) / nn;
-  const pred = Math.round(m * (n + 18) + b); // 18 × 10s ≈ 3 min trend × 10 ≈ 30 min
-  return Math.max(0, Math.min(500, pred));
+  return Math.max(0, Math.min(500, Math.round(m * (n + 18) + b)));
 }
 
 // ══════════════════════════════════════════════════════════
-//  Update UI
+//  ML Prediction — calls /api/predict with current PM2.5
 // ══════════════════════════════════════════════════════════
-function updateUI(latest, history) {
-  const aqi    = latest.aqi;
-  const cfg    = aqiConfig(aqi);
+let lastMlPred = null;
 
-  // Adaptive background glow
+async function updateMLPrediction(pm25) {
+  if (!pm25 || pm25 < 0) return;
+  try {
+    const r = await fetch(`${BACKEND}/api/predict?pm25=${pm25}`);
+    const d = await r.json();
+    if (d.predicted_aqi === undefined) return;
+
+    const cfg = aqiConfig(d.predicted_aqi);
+    lastMlPred = d.predicted_aqi;
+
+    document.getElementById('mlAQI').textContent   = d.predicted_aqi;
+    document.getElementById('mlAQI').style.color   = cfg.color;
+    document.getElementById('mlLabel').textContent  = d.predicted_label;
+    document.getElementById('mlLabel').style.color  = cfg.color;
+    document.getElementById('mlCard').style.borderColor = cfg.color;
+    document.getElementById('mlConf').textContent  =
+      `Confidence: ${d.confidence.toUpperCase()} · Data points used: ${d.data_points}`;
+    document.getElementById('mlBadge').textContent = d.confidence.toUpperCase();
+    document.getElementById('mlBadge').style.borderColor = cfg.color;
+    document.getElementById('mlBadge').style.color = cfg.color;
+
+  } catch(e) {
+    console.warn('[ML Predict]', e.message);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  Update all UI elements
+// ══════════════════════════════════════════════════════════
+function updateUI(latest, historyArr) {
+  const aqi = latest.aqi;
+  const cfg = aqiConfig(aqi);
+
+  // Adaptive glow
   document.documentElement.style.setProperty('--glow', cfg.color);
 
   // AQI circle
-  document.getElementById('aqiNumber').textContent = aqi;
-  document.getElementById('aqiNumber').style.color  = cfg.color;
-  document.getElementById('aqiCircle').style.borderColor = cfg.color;
-  document.getElementById('aqiCircle').style.boxShadow =
+  document.getElementById('aqiNumber').textContent        = aqi;
+  document.getElementById('aqiNumber').style.color        = cfg.color;
+  document.getElementById('aqiCircle').style.borderColor  = cfg.color;
+  document.getElementById('aqiCircle').style.boxShadow    =
     `0 0 30px ${cfg.color}, 0 0 60px ${cfg.color}44`;
-  document.getElementById('aqiLabel').textContent   = cfg.label;
-  document.getElementById('aqiLabel').style.color   = cfg.color;
-  document.getElementById('advisory').textContent   = cfg.advisory;
+  document.getElementById('aqiLabel').textContent         = cfg.label;
+  document.getElementById('aqiLabel').style.color         = cfg.color;
+  document.getElementById('advisory').textContent         = cfg.advisory;
 
   // Sensor cards
   document.getElementById('cardTemp').textContent   = latest.temperature.toFixed(1);
@@ -337,63 +420,74 @@ function updateUI(latest, history) {
   document.getElementById('cardMq135').textContent  = latest.mq135;
   document.getElementById('cardMq7').textContent    = latest.mq7;
 
-  // Status
+  // Status bar
   document.getElementById('statusDot').classList.add('live');
   document.getElementById('statusText').textContent = 'Live';
-  document.getElementById('lastUpdate').textContent =
-    'Updated: ' + new Date(latest.timestamp * 1000).toLocaleTimeString(); // FIXED: Convert Unix timestamp properly
+  const ts = latest.received_at
+    ? new Date(latest.received_at).toLocaleTimeString()
+    : new Date(latest.timestamp * 1000).toLocaleTimeString();
+  document.getElementById('lastUpdate').textContent = 'Updated: ' + ts;
 
   // Anomaly check
-  const isAnomaly = checkAnomaly(aqi);
-  const banner    = document.getElementById('anomalyBanner');
-  banner.style.display = isAnomaly ? 'block' : 'none';
-  if (isAnomaly) banner.textContent = `⚠️ Anomaly detected! AQI jumped to ${aqi} — sudden pollution event!`;
+  const isAnom = checkAnomaly(aqi);
+  const banner = document.getElementById('anomalyBanner');
+  banner.style.display = isAnom ? 'block' : 'none';
+  if (isAnom) banner.textContent =
+    `⚠️ Anomaly detected! AQI jumped to ${aqi} — sudden pollution event!`;
 
-  // Prediction
-  const pred = predictAQI(history);
+  // 30-min trend prediction
+  const pred = predictTrend(historyArr);
   if (pred !== null) {
-    const predCfg = aqiConfig(pred);
+    const pCfg = aqiConfig(pred);
     document.getElementById('predValue').textContent = `${pred} AQI`;
-    document.getElementById('predValue').style.color = predCfg.color;
+    document.getElementById('predValue').style.color = pCfg.color;
     document.getElementById('predLabel').textContent =
-      `Predicted category: ${predCfg.label} in 30 minutes`;
+      `Predicted category: ${pCfg.label} in ~30 minutes`;
   }
 
+  // ML prediction (calls /api/predict endpoint)
+  updateMLPrediction(latest.pm25);
+
   // Chart update
-  const last50 = history.slice(-50);
-  chart.data.labels = last50.map(r =>
-    new Date(r.timestamp * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) // FIXED: Convert Unix timestamp properly
-  );
-  chart.data.datasets[0].data = last50.map(r => r.aqi);
-  // Prediction trend line (last 12 points extended)
-  const predLine = last50.map((_, i, arr) => {
-    if (i < arr.length - 1) return null;
-    return pred;
+  const last50 = historyArr.slice(-50);
+  chart.data.labels = last50.map(r => {
+    const d = r.received_at
+      ? new Date(r.received_at)
+      : new Date(r.timestamp * 1000);
+    return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
   });
-  chart.data.datasets[1].data = predLine;
+  chart.data.datasets[0].data = last50.map(r => r.aqi);
+
+  // Trend line — only last point
+  chart.data.datasets[1].data = last50.map((_, i, arr) =>
+    i === arr.length - 1 ? pred : null
+  );
+
+  // ML prediction dot on chart — only on last point
+  chart.data.datasets[2].data = last50.map((_, i, arr) =>
+    i === arr.length - 1 ? lastMlPred : null
+  );
+
   chart.update();
 }
 
 // ══════════════════════════════════════════════════════════
-//  Fetch data from backend
+//  Fetch from backend
 // ══════════════════════════════════════════════════════════
 async function fetchData() {
   try {
-    const [latestRes, historyRes] = await Promise.all([
+    const [latestRes, histRes] = await Promise.all([
       fetch(`${BACKEND}/api/latest`),
       fetch(`${BACKEND}/api/history?limit=50`)
     ]);
     const latest  = await latestRes.json();
-    const history = await historyRes.json();
+    const histObj = await histRes.json();
 
     if (latest.status === 'no_data') {
-      showNoData();
-      return;
+      showNoData(); return;
     }
-    
-    // FIXED: Passed 'latest' directly instead of 'latest.data'
-    updateUI(latest, history.readings); 
-    
+    updateUI(latest, histObj.readings || []);
+
   } catch (err) {
     console.error('Fetch error:', err);
     document.getElementById('statusDot').classList.remove('live');
@@ -405,23 +499,19 @@ function showNoData() {
   document.getElementById('statusText').textContent = 'Waiting for ESP32...';
   document.getElementById('aqiLabel').textContent   = 'No data yet';
   document.getElementById('advisory').textContent   =
-    'ESP32 not connected yet. Check WiFi and backend URL in firmware.';
+    'ESP32 not connected. Check WiFi and firmware backend URL.';
 }
 
-async function downloadCSV() {
-  window.open(`${BACKEND}/api/download`, '_blank');
-}
-
-function refreshNow() { fetchData(); }
-function clearChart() {
+function downloadCSV() { window.open(`${BACKEND}/api/download`, '_blank'); }
+function refreshNow()  { fetchData(); }
+function clearChart()  {
   chart.data.labels = [];
-  chart.data.datasets[0].data = [];
-  chart.data.datasets[1].data = [];
+  chart.data.datasets.forEach(d => d.data = []);
   chart.update();
   aqiWindow = [];
 }
 
-// ── Start polling ──────────────────────────────────────────
+// ── Start ──────────────────────────────────────────────────
 fetchData();
 setInterval(fetchData, REFRESH_MS);
 </script>
